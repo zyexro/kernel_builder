@@ -20,11 +20,11 @@ on: # [push]
       KREPO:
         description: 'kernel repo'
         required: true
-        default: 'https://github.com/zyexro/sashimi_kernel_xiaomi_blossom'
+        default: 'https://github.com/pix106/android_kernel_xiaomi_sdm660_southwest-ng'
       KBRANCH:
         description: 'kernel branch'
         required: true
-        default: 'sashimi'
+        default: 'main-cip-dynamic'
       NOTES:
         description: 'notes to print out'
         required: false
@@ -36,11 +36,11 @@ on: # [push]
       ZREPO:
         description: 'zipper repo'
         required: false
-        default: 'https://github.com/zyexro/AnyKernel3.git'
+        default: 'https://github.com/IaAkram/Anykernel3.git'
       ZBRANCH:
         description: 'zipper branch'
         required: false
-        default: 'blossom'
+        default: 'whyred'
       KSU:
         description: 'if dont want ksu then leave blank'
         required: false
