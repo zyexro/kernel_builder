@@ -1,11 +1,12 @@
-From 7a1d9426f5afdeb2785b9a0ba16e0f4923b995bd Mon Sep 17 00:00:00 2001
+From 0753871dd797bbcc6e4bef908c8bf67b6bd56555 Mon Sep 17 00:00:00 2001
 From: zyexro <zyexro@proton.me>
-Date: Thu, 4 Jun 2026 23:51:58 +0100
+Date: Wed, 17 Jun 2026 21:53:49 +0100
 Subject: [PATCH] BACKPORT: KernelSU: Implement SuSFS-V2.1.0
 
 Link: https://gitlab.com/simonpunk/susfs4ksu/-/commit/9a8a553adba2b91aaa137be5ffad4dab0aea7eb0
 
 Co-auhtored-by: simonpunk <simonpunk2016@gmail.com>
+Change-Id: Ie8f4016b08facc820001ab005ba9aac5f49bb884
 Signed-off-by: JackA1ltman <cs2dtzq@163.com>
 Signed-off-by: zyexro <zyexro@proton.me>
 ---
@@ -392,7 +393,7 @@ index 5d042506a1b4..f301ea54a365 100644
  	do_delayed_call(&done);
  	return res;
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 34922e62670b..c8e21ba2db4d 100644
+index c6daa96b7df2..5e2d156f9825 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
 @@ -27,10 +27,21 @@
@@ -3780,7 +3781,7 @@ index 4b221434db4b..3515c2d38130 100644
  	if (copy_to_user(name, &tmp, sizeof(tmp)))
  		return -EFAULT;
 diff --git a/mm/memory.c b/mm/memory.c
-index e374cb5518a8..45374e6104ae 100644
+index 0a8a6d922bb3..de864d815c32 100644
 --- a/mm/memory.c
 +++ b/mm/memory.c
 @@ -81,6 +81,10 @@
@@ -3794,9 +3795,9 @@ index e374cb5518a8..45374e6104ae 100644
  #include "internal.h"
  
  #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
-@@ -5250,12 +5254,21 @@ int __access_remote_vm(struct task_struct *tsk, struct mm_struct *mm,
- 	if (down_read_killable(&mm->mmap_sem))
- 		return 0;
+@@ -5258,12 +5262,21 @@ int __access_remote_vm(struct task_struct *tsk, struct mm_struct *mm,
+ 		}
+ 	}
  
 +#ifdef CONFIG_KSU_SUSFS_SUS_MAP
 +	vma = find_vma(mm, addr);
