@@ -1,12 +1,11 @@
-From 2c66745bcac6df00401bcee680407ba2077a3be6 Mon Sep 17 00:00:00 2001
-From: simonpunk <simonpunk2016@gmail.com>
-Date: Thu, 2 Jul 2026 20:14:46 +0000
+From c3a173c2e9216ebcb3a8cbd733b2f1f21c32c466 Mon Sep 17 00:00:00 2001
+From: zyexro <zyexro@proton.me>
+Date: Wed, 29 Jul 2026 22:47:27 +0100
 Subject: [PATCH] BACKPORT: KernelSU: Implement SuSFS v2.2
 
 Link: https://gitlab.com/simonpunk/susfs4ksu/-/commit/aee962343bc49469a5427a0e6987e6a70fe88ba3
 
-Change-Id: I42f535df633373bb86a0a8a828afe6d299e88a5c
-Signed-off-by: JackA1ltman <cs2dtzq@163.com>>
+Change-Id: Icbc6dd78dfa9488451079f4761f8bbffe10dafe3
 Signed-off-by: zyexro <zyexro@proton.me>
 ---
  fs/Makefile               |    2 +
@@ -802,7 +801,7 @@ index 7df9ad4d8433..145ba52274e5 100644
  			   inode_mark->wd, inode->i_ino, inode->i_sb->s_dev,
  			   inotify_mark_user_mask(mark));
 diff --git a/fs/open.c b/fs/open.c
-index fafbb7d38801..8e48a273704f 100644
+index 7781543e1a3e..e071fd34b9cb 100644
 --- a/fs/open.c
 +++ b/fs/open.c
 @@ -35,6 +35,10 @@
@@ -816,7 +815,7 @@ index fafbb7d38801..8e48a273704f 100644
  int do_truncate(struct dentry *dentry, loff_t length, unsigned int time_attrs,
  	struct file *filp)
  {
-@@ -1096,11 +1100,19 @@ struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
+@@ -1088,11 +1092,19 @@ struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
  }
  EXPORT_SYMBOL(file_open_root);
  
@@ -836,7 +835,7 @@ index fafbb7d38801..8e48a273704f 100644
  
  	if (fd)
  		return fd;
-@@ -1110,8 +1122,26 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
+@@ -1102,8 +1114,26 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
  		return PTR_ERR(tmp);
  
  	fd = get_unused_fd_flags(flags);
@@ -864,7 +863,7 @@ index fafbb7d38801..8e48a273704f 100644
  			put_unused_fd(fd);
  			fd = PTR_ERR(f);
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 3fe832a5dff3..04ae4e3cad87 100644
+index 2f1e8ec46949..9d66956ab02a 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
 @@ -95,6 +95,9 @@
@@ -1052,7 +1051,7 @@ index 81882a13212d..20f1d9c217ce 100644
  	show_fd_locks(m, file, files);
  	if (seq_has_overflowed(m))
 diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
-index e3a415187b4d..8c759f24f693 100644
+index 62d766964ac6..3b6c8932fdc6 100644
 --- a/fs/proc/task_mmu.c
 +++ b/fs/proc/task_mmu.c
 @@ -20,6 +20,9 @@
@@ -1175,19 +1174,19 @@ index e3a415187b4d..8c759f24f693 100644
  	if (!mm || !mmget_not_zero(mm))
  		goto out;
 @@ -1841,7 +1902,15 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
- 		ret = down_read_killable(&mm->mmap_sem);
+ 		ret = mmap_read_lock_killable(mm);
  		if (ret)
  			goto out_free;
 +#ifdef CONFIG_KSU_SUSFS_SUS_MAP
-+		vma = find_vma(mm, start_vaddr);
-+		if (vma && vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))
-+			goto bypass_orig_flow;
++               vma = find_vma(mm, start_vaddr);
++               if (vma && vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))
++                       goto bypass_orig_flow;
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
  		ret = walk_page_range(start_vaddr, end, &pagemap_walk);
 +#ifdef CONFIG_KSU_SUSFS_SUS_MAP
 +bypass_orig_flow:
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
- 		up_read(&mm->mmap_sem);
+ 		mmap_read_unlock(mm);
  		start_vaddr = end;
  
 diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
@@ -1677,7 +1676,7 @@ index 3c5ce8a0ddc9..76b25d1c7002 100644
  }
  #endif
 diff --git a/fs/stat.c b/fs/stat.c
-index 307bf147ddaa..2b45b1e791fc 100644
+index 376543199b5a..2b04c2976b3f 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
 @@ -21,6 +21,10 @@
@@ -3762,7 +3761,7 @@ index c37719c4ea4a..91e2cdf5ccea 100644
  }
  
 diff --git a/kernel/sys.c b/kernel/sys.c
-index 4b221434db4b..8cc5eea0dbe5 100644
+index 5b5aa3a23712..4a9a3d2ede92 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
 @@ -1262,6 +1262,10 @@ static int override_version(struct new_utsname __user *name)
@@ -3788,7 +3787,7 @@ index 4b221434db4b..8cc5eea0dbe5 100644
  	if (copy_to_user(name, &tmp, sizeof(tmp)))
  		return -EFAULT;
 diff --git a/mm/memory.c b/mm/memory.c
-index 0a8a6d922bb3..de864d815c32 100644
+index 8e8fdc2e7130..d6ed17a68017 100644
 --- a/mm/memory.c
 +++ b/mm/memory.c
 @@ -81,6 +81,10 @@
@@ -3825,7 +3824,7 @@ index 0a8a6d922bb3..de864d815c32 100644
  				gup_flags, &page, &vma, NULL);
  		if (ret <= 0) {
 diff --git a/security/selinux/avc.c b/security/selinux/avc.c
-index 4a2433ac6235..184a880de9dc 100644
+index 0ca02231a848..7f8bfe9e22d9 100644
 --- a/security/selinux/avc.c
 +++ b/security/selinux/avc.c
 @@ -165,6 +165,11 @@ static void avc_dump_av(struct audit_buffer *ab, u16 tclass, u32 av)
