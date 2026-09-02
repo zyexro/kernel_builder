@@ -9,7 +9,7 @@ case $1 in
   "setup" )
     if [[ ! -d "${dir}/bin" ]]; then
       mkdir -p "${dir}" && cd "${dir}"
-      LATEST_URL="https://www.kernel.org/pub/tools/llvm/files/llvm-23.1.0-rc3-x86_64.tar.xz"
+      LATEST_URL="https://www.kernel.org/pub/tools/llvm/files/llvm-23.1.0-x86_64.tar.xz"
 
       echo "Downloading Slim LLVM..."
       curl -Lo a.tar.xz "$LATEST_URL"
