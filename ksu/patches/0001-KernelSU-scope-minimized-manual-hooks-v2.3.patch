@@ -1,4 +1,4 @@
-From 5b9f43fbd84d619bc0e22a64db5fcafff944ff10 Mon Sep 17 00:00:00 2001
+From 040b60be248eb5bb0c0005ab410be1eca575931f Mon Sep 17 00:00:00 2001
 From: zyexro <zyexro@proton.me>
 Date: Fri, 4 Sep 2026 21:35:33 +0100
 Subject: [PATCH] KernelSU: scope-minimized manual hooks v2.3
@@ -13,10 +13,9 @@ Signed-off-by: zyexro <zyexro@proton.me>
  fs/stat.c                      | 26 ++++++++++++++++++++++++++
  kernel/reboot.c                |  5 +++++
  kernel/sys.c                   |  7 +++++++
- security/selinux/avc.c         |  5 +++++
  security/selinux/selinuxfs.c   |  4 ++--
  security/selinux/ss/services.c |  4 ++--
- 10 files changed, 76 insertions(+), 4 deletions(-)
+ 9 files changed, 71 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/input/input.c b/drivers/input/input.c
 index ecf524803b34..43eff057bc1c 100644
@@ -197,22 +196,6 @@ index 5b5aa3a23712..0ad5355e0cce 100644
  	kruid = make_kuid(ns, ruid);
  	keuid = make_kuid(ns, euid);
  	ksuid = make_kuid(ns, suid);
-diff --git a/security/selinux/avc.c b/security/selinux/avc.c
-index 0ca02231a848..84ace88c0ad5 100644
---- a/security/selinux/avc.c
-+++ b/security/selinux/avc.c
-@@ -777,6 +777,11 @@ noinline int slow_avc_audit(struct selinux_state *state,
- 	struct common_audit_data stack_data;
- 	struct selinux_audit_data sad;
- 
-+#if defined(CONFIG_KSU) && !defined(CONFIG_KPROBES)
-+	extern void ksu_slow_avc_audit(u32 *);
-+	ksu_slow_avc_audit(&tsid);
-+#endif
-+
- 	/* Only log permissive=1 messages for SECURITY_SELINUX_DEVELOP */
- 	if (denied && !result)
- 		return 0;
 diff --git a/security/selinux/selinuxfs.c b/security/selinux/selinuxfs.c
 index d93fd1a98163..d48e633f6859 100644
 --- a/security/selinux/selinuxfs.c
